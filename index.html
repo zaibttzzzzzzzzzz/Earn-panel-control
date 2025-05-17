@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pak Earn PKR Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --green: #2ecc71; --red: #e74c3c; }
+        .admin-login { max-width: 400px; margin: 50px auto; padding: 30px; box-shadow: 0 0 20px #0001; }
+        .admin-panel { background: #f8f9fa; min-height: 100vh; }
+        .user-row:hover { background: #f1f1f1; }
+    </style>
+</head>
+<body>
+
+<!-- Step 1: Admin Login -->
+<div id="adminLogin" class="admin-login">
+    <h3 class="text-center mb-4">🔒 Admin Access</h3>
+    <input type="password" id="adminPassword" class="form-control mb-3" placeholder="Enter Admin Password">
+    <button class="btn btn-success w-100" onclick="verifyAdmin()">Submit</button>
+</div>
+
+<!-- Step 2: Main Admin Panel (Hidden Initially) -->
+<div id="mainAdminPanel" class="container-fluid admin-panel" style="display:none;">
+    <div class="row">
+        <div class="col-12 p-4">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>👑 Pak Earn Control Panel</h3>
+                <button class="btn btn-danger" onclick="logoutAdmin()">Logout</button>
+            </div>
+
+            <!-- User Management -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5>👥 All Users</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Balance</th>
+                                    <th>Last Login</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userList">
+                                <!-- Users load here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Management -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Add New Task -->
+                        <div class="col-md-6">
+                            <h5>➕ Add New Task</h5>
+                            <input type="text" id="taskTitle" class="form-control mb-2" placeholder="Task Title">
+                            <input type="url" id="taskURL" class="form-control mb-2" placeholder="Video URL">
+                            <input type="number" id="taskReward" class="form-control mb-2" placeholder="Reward (PKR)">
+                            <button class="btn btn-success w-100" onclick="addTask()">Add Task</button>
+                        </div>
+
+                        <!-- Existing Tasks -->
+                        <div class="col-md-6">
+                            <h5>📋 Active Tasks</h5>
+                            <ul class="list-group" id="taskList">
+                                <!-- Tasks load here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Admin Configuration
+const ADMIN_PASSWORD = "zaib331099"; // Set Your Password Here
+
+// Database
+let users = JSON.parse(localStorage.getItem('pakEarnUsers')) || [];
+let tasks = JSON.parse(localStorage.getItem('pakEarnTasks')) || [];
+
+// Step 1: Verify Admin
+function verifyAdmin() {
+    const password = document.getElementById('adminPassword').value;
+    if(password === ADMIN_PASSWORD) {
+        document.getElementById('adminLogin').style.display = 'none';
+        document.getElementById('mainAdminPanel').style.display = 'block';
+        loadAdminData();
+    } else {
+        alert("Wrong Password!");
+    }
+}
+
+// Step 2: Load All Data
+function loadAdminData() {
+    // Load Users
+    document.getElementById('userList').innerHTML = users.map(user => `
+        <tr class="user-row">
+            <td>${user.email}</td>
+            <td>${user.balance} PKR</td>
+            <td>${new Date(user.lastLogin || Date.now()).toLocaleString()}</td>
+            <td>${user.blocked ? '<span class="badge bg-danger">Blocked</span>' : '<span class="badge bg-success">Active</span>'}</td>
+            <td>
+                <button class="btn ${user.blocked ? 'btn-success' : 'btn-danger'}" 
+                    onclick="toggleUserStatus('${user.email}')">
+                    ${user.blocked ? 'Unblock' : 'Block'}
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Load Tasks
+    document.getElementById('taskList').innerHTML = tasks.map((task, index) => `
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            ${task.title} (${task.reward} PKR)
+            <button class="btn btn-danger btn-sm" onclick="deleteTask(${index})">Delete</button>
+        </li>
+    `).join('');
+}
+
+// Step 3: User Actions
+function toggleUserStatus(email) {
+    if(confirm("Are you sure?")) {
+        const user = users.find(u => u.email === email);
+        user.blocked = !user.blocked;
+        localStorage.setItem('pakEarnUsers', JSON.stringify(users));
+        loadAdminData();
+    }
+}
+
+// Step 4: Task Management
+function addTask() {
+    const newTask = {
+        title: document.getElementById('taskTitle').value,
+        url: document.getElementById('taskURL').value,
+        reward: parseInt(document.getElementById('taskReward').value)
+    };
+    
+    tasks.push(newTask);
+    localStorage.setItem('pakEarnTasks', JSON.stringify(tasks));
+    loadAdminData();
+    alert("Task Added!");
+}
+
+function deleteTask(index) {
+    if(confirm("Delete this task?")) {
+        tasks.splice(index, 1);
+        localStorage.setItem('pakEarnTasks', JSON.stringify(tasks));
+        loadAdminData();
+    }
+}
+
+// Logout
+function logoutAdmin() {
+    window.location.reload();
+}
+</script>
+
+</body>
+</html>
